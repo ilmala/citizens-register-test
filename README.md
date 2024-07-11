@@ -10,3 +10,5 @@ Start Docker Sail
 ```bash
 ./vendor/bin/sail up
 ```
+
+http://localhost
