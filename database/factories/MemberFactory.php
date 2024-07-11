@@ -19,7 +19,7 @@ class MemberFactory extends Factory
         return [
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
-            'personal_code' => $this->faker->taxId(),
+            'tax_id' => $this->faker->taxId(),
         ];
     }
 }
