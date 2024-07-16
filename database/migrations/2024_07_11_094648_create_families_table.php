@@ -21,7 +21,7 @@ return new class () extends Migration {
                 ->foreignUlid('responsible_id')
                 ->index()
                 ->nullable()
-                ->constrained('members');
+                ->constrained('people');
 
             $table->timestamps();
         });

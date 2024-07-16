@@ -23,14 +23,15 @@ class Family extends Model
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(
-            related: Member::class,
-        );
+            related: Person::class,
+        )->withPivot('role')
+            ->withTimestamps();
     }
 
     public function responsible(): BelongsTo
     {
         return $this->belongsTo(
-            related: Member::class,
+            related: Person::class,
             foreignKey: 'responsible_id',
         );
     }
