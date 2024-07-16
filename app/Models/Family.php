@@ -20,6 +20,16 @@ class Family extends Model
         'responsible_id',
     ];
 
+    public function isLedBy(Person $person): bool
+    {
+        return $this->responsible?->is($person) ?? false;
+    }
+
+    public function hasMember(Person $person)
+    {
+     return $this->members->contains($person);
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(
