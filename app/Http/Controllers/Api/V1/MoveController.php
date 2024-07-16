@@ -22,7 +22,7 @@ class MoveController extends Controller
             'person_id' => ['required', 'exists:people,id'],
             'from_family_id' => ['required', 'exists:families,id'],
             'to_family_id' => ['required', 'exists:families,id'],
-            'to_role' => ['required', Rule::enum(Role::class)],
+            'role' => ['required', Rule::enum(Role::class)],
         ]);
 
         $person = Person::query()->findOrFail(
@@ -44,7 +44,7 @@ class MoveController extends Controller
             id: $request->string('to_family_id')->toString(),
         );
 
-        $toRole = $request->enum('to_role', Role::class);
+        $toRole = $request->enum('role', Role::class);
 
         // Check if person is responsible for the family from
         if($familyFrom->isLedBy($person)) {

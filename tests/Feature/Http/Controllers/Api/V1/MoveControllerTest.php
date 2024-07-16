@@ -19,7 +19,7 @@ test("Un cittadino si puo spostare da una famiglia all'altra", function (): void
         'person_id' => $person->id,
         'from_family_id' => $familyA->id,
         'to_family_id' => $familyB->id,
-        'to_role' => Role::Parent,
+        'role' => Role::Parent,
     ]);
 
     $response->assertStatus(204);
@@ -44,7 +44,7 @@ test("Il cittadino responsabile non può spostarsi  dalla famiglia", function ()
         'person_id' => $person->id,
         'from_family_id' => $familyA->id,
         'to_family_id' => $familyB->id,
-        'to_role' => Role::Parent,
+        'role' => Role::Parent,
     ]);
 
     $response->assertStatus(422);

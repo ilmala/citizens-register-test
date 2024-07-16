@@ -84,3 +84,20 @@ test("Solo i cittadini genitori o tutori possono diventare responsabili", functi
     $family = $family->fresh();
     expect($family->responsible)->toBeNull();
 });
+
+test('Un cittadino responsabile di una famiglia non puo essere promosso a responsabile', function (): void {
+    $person = Person::factory()->create();
+    $family = Family::factory()->create();
+    $family->members()->attach($person, ['role' => Role::Parent]);
+
+    $family->responsible()->associate($person);
+    $family->save();
+
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $person->id,
+        'family_id' => $family->id,
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['person_id']);
+});

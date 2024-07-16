@@ -48,6 +48,12 @@ class ResponsibleController extends Controller
             id: $request->string('family_id')->toString(),
         );
 
+        if( $familyMember && $family->isLedBy($person)) {
+            throw ValidationException::withMessages([
+                'person_id' => ['Person is already a family responsible.'],
+            ]);
+        }
+
         $family->responsible()->associate($person);
         $family->save();
 
