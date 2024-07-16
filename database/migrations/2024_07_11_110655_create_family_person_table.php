@@ -1,17 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class () extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('family_person', function (Blueprint $table) {
+        Schema::create('family_person', function (Blueprint $table): void {
             $table->foreignUlid('family_id')->index()->constrained();
             $table->foreignUlid('person_id')->index()->constrained();
             $table->string('role');

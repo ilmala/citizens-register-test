@@ -12,13 +12,18 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
-class PersonResponsibleController extends Controller
+class ResponsibleController extends Controller
 {
-    public function __invoke(Request $request, Person $person): Response
+    public function __invoke(Request $request): Response
     {
         $request->validate([
+            'person_id' => ['required', 'exists:people,id'],
             'family_id' => ['required', 'exists:families,id'],
         ]);
+
+        $person = Person::query()->findOrFail(
+            id: $request->string('person_id')->toString(),
+        );
 
         $familyMember = $person->families()->find(
             id: $request->string('family_id')->toString(),

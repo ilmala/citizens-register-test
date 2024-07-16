@@ -27,7 +27,7 @@ class Family extends Model
 
     public function hasMember(Person $person)
     {
-     return $this->members->contains($person);
+        return $this->members->contains($person);
     }
 
     public function members(): BelongsToMany

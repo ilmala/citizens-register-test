@@ -6,14 +6,15 @@ use App\Enums\Role;
 use App\Models\Family;
 use App\Models\Person;
 
-test('a person member of a family can be promoted to responsible', function (): void {
+test('Un cittadino membro di una famiglia puo essere promosso a responsabile', function (): void {
     $person = Person::factory()->create();
     $family = Family::factory()->create();
     $family->members()->attach($person, ['role' => Role::Parent]);
 
     expect($family->responsible)->toBeNull();
 
-    $response = $this->postJson("/api/v1/person/{$person->id}/responsible", [
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $person->id,
         'family_id' => $family->id,
     ]);
 
@@ -24,14 +25,14 @@ test('a person member of a family can be promoted to responsible', function (): 
         ->toBeInstanceOf(Person::class);
 });
 
-test('a person not a member of a family can not be promoted to responsible', function (): void {
+test('Un cittadino non membro di una famiglia non puo essere promosso a responsabile', function (): void {
     $person = Person::factory()->create();
     $family = Family::factory()->create();
-    //$family->members()->attach($person, ['role' => Role::Parent]);
 
     expect($family->responsible)->toBeNull();
 
-    $response = $this->postJson("/api/v1/person/{$person->id}/responsible", [
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $person->id,
         'family_id' => $family->id,
     ]);
 
@@ -42,7 +43,7 @@ test('a person not a member of a family can not be promoted to responsible', fun
     expect($family->responsible)->toBeNull();
 });
 
-test('a person member of a family can replace a current responsible when promoted', function (): void {
+test('Alla promozione a responsabile, il cittadino sostituisce un eventuale altro responsabile già definito', function (): void {
     $personA = Person::factory()->create();
     $personB = Person::factory()->create();
     $family = Family::factory()->create();
@@ -53,7 +54,8 @@ test('a person member of a family can replace a current responsible when promote
 
     expect($family->responsible->is($personA))->toBeTrue();
 
-    $response = $this->postJson("/api/v1/person/{$personB->id}/responsible", [
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $personB->id,
         'family_id' => $family->id,
     ]);
 
@@ -71,7 +73,8 @@ test("Solo i cittadini genitori o tutori possono diventare responsabili", functi
 
     expect($family->responsible)->toBeNull();
 
-    $response = $this->postJson("/api/v1/person/{$person->id}/responsible", [
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $person->id,
         'family_id' => $family->id,
     ]);
 

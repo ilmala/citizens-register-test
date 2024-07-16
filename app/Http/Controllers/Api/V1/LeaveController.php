@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Role;
@@ -10,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
-class PersonLeaveController extends Controller
+class LeaveController extends Controller
 {
     /**
      * @param Request $request
@@ -18,11 +20,16 @@ class PersonLeaveController extends Controller
      * @return Response
      * @throws ValidationException
      */
-    public function __invoke(Request $request, Person $person): Response
+    public function __invoke(Request $request): Response
     {
         $request->validate([
+            'person_id' => ['required', 'exists:people,id'],
             'family_id' => ['required', 'exists:families,id'],
         ]);
+
+        $person = Person::query()->findOrFail(
+            id: $request->string('person_id')->toString(),
+        );
 
         $family = Family::query()->findOrFail(
             id: $request->string('family_id')->toString(),
@@ -46,7 +53,7 @@ class PersonLeaveController extends Controller
 
         $familyMemberRole = Role::tryFrom($member->pivot->role);
         // Check if member is a child and is the only member of family
-        if($familyMemberRole === Role::Child && $family->members()->count() === 1 && $person->families()->count() === 1) {
+        if(Role::Child === $familyMemberRole && 1 === $family->members()->count() && 1 === $person->families()->count()) {
             throw ValidationException::withMessages([
                 'family_id' => ['Person is a child and is the only member in the family.'],
             ]);

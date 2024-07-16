@@ -14,21 +14,20 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-class PersonMoveController extends Controller
+class MoveController extends Controller
 {
-    /**
-     * @param Request $request
-     * @param Person $person
-     * @return Response
-     * @throws ValidationException
-     */
-    public function __invoke(Request $request, Person $person): Response
+    public function __invoke(Request $request): Response
     {
         $request->validate([
+            'person_id' => ['required', 'exists:people,id'],
             'from_family_id' => ['required', 'exists:families,id'],
             'to_family_id' => ['required', 'exists:families,id'],
             'to_role' => ['required', Rule::enum(Role::class)],
         ]);
+
+        $person = Person::query()->findOrFail(
+            id: $request->string('person_id')->toString(),
+        );
 
         $familyFrom = Family::query()->findOrFail(
             id: $request->string('from_family_id')->toString(),

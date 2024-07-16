@@ -15,7 +15,8 @@ test("Un cittadino si puo spostare da una famiglia all'altra", function (): void
     expect($person->isMemberOf($familyA))->toBeTrue();
     expect($person->isMemberOf($familyB))->toBeFalse();
 
-    $response = $this->postJson("/api/v1/person/{$person->id}/move", [
+    $response = $this->postJson("/api/v1/move", [
+        'person_id' => $person->id,
         'from_family_id' => $familyA->id,
         'to_family_id' => $familyB->id,
         'to_role' => Role::Parent,
@@ -39,7 +40,8 @@ test("Il cittadino responsabile non può spostarsi  dalla famiglia", function ()
     expect($person->isMemberOf($familyA))->toBeTrue();
     expect($person->isMemberOf($familyB))->toBeFalse();
 
-    $response = $this->postJson("/api/v1/person/{$person->id}/move", [
+    $response = $this->postJson("/api/v1/move", [
+        'person_id' => $person->id,
         'from_family_id' => $familyA->id,
         'to_family_id' => $familyB->id,
         'to_role' => Role::Parent,

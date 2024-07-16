@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -26,7 +28,7 @@ class Person extends Model
     public function families(): BelongsToMany
     {
         return $this->belongsToMany(
-            related: Family::class
+            related: Family::class,
         )->withPivot('role')
             ->withTimestamps();
     }
