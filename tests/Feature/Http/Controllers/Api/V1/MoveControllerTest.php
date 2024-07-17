@@ -29,8 +29,6 @@ test("Un cittadino si puo spostare da una famiglia all'altra", function (): void
 });
 
 test("Il cittadino responsabile non può spostarsi  dalla famiglia", function (): void {
-    $this->withoutExceptionHandling();
-
     $person = Person::factory()->create();
     $familyA = Family::factory()->create();
     $familyB = Family::factory()->create();
@@ -50,9 +48,13 @@ test("Il cittadino responsabile non può spostarsi  dalla famiglia", function ()
     ]);
 
     $response->assertStatus(404);
+    $response->assertJsonFragment([
+        'status' => 'error',
+        'message' => "Non si può spostare il responsabile di una famiglia",
+    ]);
 
     expect($person->isMemberOf($familyA))->toBeTrue();
     expect($person->isMemberOf($familyB))->toBeFalse();
-})->throws(Exception::class, "Non si può spostare il responsabile di una famiglia");
+});
 
 todo("Un cittadino si puo spostare solo se appartiene alla famiglia di provenienza");

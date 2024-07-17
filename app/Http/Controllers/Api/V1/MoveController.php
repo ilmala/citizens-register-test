@@ -4,20 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\MovePerson;
 use App\Enums\Role;
-use App\Exceptions\InvalidFamilyMemberException;
 use App\Http\Controllers\Controller;
-use App\Models\Family;
-use App\Models\Person;
-use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Throwable;
 
 class MoveController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, MovePerson $movePerson): Response|JsonResponse
     {
         $request->validate([
             'person_id' => ['required', 'exists:people,id'],
@@ -26,45 +24,16 @@ class MoveController extends Controller
             'role' => ['required', Rule::enum(Role::class)],
         ]);
 
-        $person = Person::query()->findOrFail(
-            id: $request->string('person_id')->toString(),
-        );
-
-        $familyFrom = Family::query()->findOrFail(
-            id: $request->string('from_family_id')->toString(),
-        );
-
-        // Check if person is member of the family from
-        if( ! $familyFrom->hasMember($person)) {
-            throw new InvalidFamilyMemberException(
-                message: "Il cittadino non è membro della famiglia indicata.",
-                code: 404,
+        try {
+            $movePerson->handle(
+                request: $request,
             );
+        } catch (Throwable $exception) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $exception->getMessage(),
+            ], $exception->getCode() ?? Response::HTTP_BAD_REQUEST);
         }
-
-        $familyTo = Family::query()->findOrFail(
-            id: $request->string('to_family_id')->toString(),
-        );
-
-        $toRole = $request->enum('role', Role::class);
-
-        // Check if person is responsible for the family from
-        if($familyFrom->isLedBy($person)) {
-            throw new Exception(
-                message: "Non si può spostare il responsabile di una famiglia",
-                code: 404,
-            );
-        }
-
-        DB::transaction(function () use ($familyFrom, $familyTo, $toRole, $person): void {
-            // remove from family
-            $familyFrom->members()->detach($person);
-
-            // add to family
-            $familyTo->members()->attach($person, [
-                'role' => $toRole->value,
-            ]);
-        });
 
         return response()->noContent();
     }
