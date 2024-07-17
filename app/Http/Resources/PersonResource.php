@@ -20,9 +20,7 @@ class PersonResource extends JsonResource
             'first_name' => $this->resource->first_name,
             'last_name' => $this->resource->last_name,
             'name' => $this->resource->first_name . ' ' . $this->resource->last_name,
-            'role' => $this->whenPivotLoaded('family_person', function () {
-                return $this->pivot->role;
-            }),
+            'role' => $this->whenPivotLoaded('family_person', fn() => $this->pivot->role),
             'tax_id' => $this->resource->tax_id,
             'families' => FamilyResource::collection($this->whenLoaded('families')),
         ];

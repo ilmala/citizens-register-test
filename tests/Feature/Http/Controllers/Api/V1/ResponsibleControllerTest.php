@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\Role;
+use App\Exceptions\InvalidFamilyMemberException;
+use App\Exceptions\InvalidMemberRoleException;
 use App\Models\Family;
 use App\Models\Person;
 
@@ -26,6 +28,8 @@ test('Un cittadino membro di una famiglia puo essere promosso a responsabile', f
 });
 
 test('Un cittadino non membro di una famiglia non puo essere promosso a responsabile', function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
 
@@ -36,12 +40,8 @@ test('Un cittadino non membro di una famiglia non puo essere promosso a responsa
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['family_id']);
-
-    $family = $family->fresh();
     expect($family->responsible)->toBeNull();
-});
+})->throws(InvalidFamilyMemberException::class, "Il cittadino non è membro della famiglia indicata.");
 
 test('Alla promozione a responsabile, il cittadino sostituisce un eventuale altro responsabile già definito', function (): void {
     $personA = Person::factory()->create();
@@ -67,6 +67,8 @@ test('Alla promozione a responsabile, il cittadino sostituisce un eventuale altr
 });
 
 test("Solo i cittadini genitori o tutori possono diventare responsabili", function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
     $family->members()->attach($person, ['role' => Role::Child]);
@@ -78,14 +80,15 @@ test("Solo i cittadini genitori o tutori possono diventare responsabili", functi
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['family_id']);
+    $response->assertStatus(404);
 
     $family = $family->fresh();
     expect($family->responsible)->toBeNull();
-});
+})->throws(InvalidMemberRoleException::class, "Un cittadino con ruolo child non puo diventare responsabile.");
 
 test('Un cittadino responsabile di una famiglia non puo essere promosso a responsabile', function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
     $family->members()->attach($person, ['role' => Role::Parent]);
@@ -98,9 +101,8 @@ test('Un cittadino responsabile di una famiglia non puo essere promosso a respon
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['person_id']);
-});
+    $response->assertStatus(404);
+})->throws(Exception::class, "Questo cittadino è gia responsabile di questa famiglia.");
 
 test("Il genitore può essere responsabile di famiglie con massimo 6 membri", function (): void {
     $persons = Person::factory()->count(6)->create();
@@ -126,6 +128,8 @@ test("Il genitore può essere responsabile di famiglie con massimo 6 membri", fu
 });
 
 test("Il genitore non può essere responsabile di famiglie con più 6 membri", function (): void {
+    $this->withoutExceptionHandling();
+
     $persons = Person::factory()->count(7)->create();
     $family = Family::factory()->create();
     $family->members()->attach([
@@ -143,11 +147,12 @@ test("Il genitore non può essere responsabile di famiglie con più 6 membri", f
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['family_id']);
-});
+    $response->assertStatus(404);
+})->throws(Exception::class, "Un cittadino parente non puo essere responsabile di una famiglia con + di 6 membri.");
 
 test("Il genitore può essere responsabile per non più di 3 famiglie", function (): void {
+    $this->withoutExceptionHandling();
+
     $parentPerson = Person::factory()->create();
     $families = Family::factory()->count(3)->create();
     foreach ($families as $family) {
@@ -174,9 +179,8 @@ test("Il genitore può essere responsabile per non più di 3 famiglie", function
         'family_id' => $newFamily->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['person_id']);
-});
+    $response->assertStatus(404);
+})->throws(Exception::class, "Un cittadino parente non puo essere responsabile di più di 3 famiglie.");
 
 test("Il tutore può essere responsabile di famiglie con più 6 membri", function (): void {
     $persons = Person::factory()->count(7)->create();

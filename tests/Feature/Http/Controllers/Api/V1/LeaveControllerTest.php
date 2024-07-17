@@ -22,6 +22,8 @@ test('Un cittadino puo lasciare una famiglia', function (): void {
 });
 
 test("Il cittadino responsabile non può lasciare la famiglia", function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
 
@@ -36,13 +38,14 @@ test("Il cittadino responsabile non può lasciare la famiglia", function (): voi
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['family_id']);
+    $response->assertStatus(404);
 
     expect($person->isMemberOf($family))->toBeTrue();
-});
+})->throws(Exception::class, "Il responsabile non puo lasciare una famiglia.");
 
 test("I figli non possono lasciare la famiglia se sono gli unici membri e non appartengono già ad altre famiglie", function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
 
@@ -53,11 +56,10 @@ test("I figli non possono lasciare la famiglia se sono gli unici membri e non ap
         'family_id' => $family->id,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['family_id']);
+    $response->assertStatus(404);
 
     expect($person->isMemberOf($family))->toBeTrue();
-});
+})->throws(Exception::class, "Il cittadino filgio è il solo membro della famiglia.");
 
 test("I figli possono lasciare la famiglia se non sono gli unici membri", function (): void {
     $parent = Person::factory()->create();
@@ -93,3 +95,5 @@ test("I figli possono lasciare la famiglia se appartengono gia a un altra famigl
     $response->assertStatus(204);
     expect($family->members)->toHaveCount(0);
 });
+
+todo("Un cittadino puo lasciare solo se appartiene alla famiglia di provenienza");

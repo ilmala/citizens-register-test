@@ -8,10 +8,10 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
 use App\Models\Person;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class FamilyMemberController extends Controller
 {
@@ -26,10 +26,11 @@ class FamilyMemberController extends Controller
             id: $request->string('person_id')->toString(),
         );
 
-        if($family->hasMember($person)){
-            throw ValidationException::withMessages([
-                'person_id' => ['Person is already member of this family.'],
-            ]);
+        if($family->hasMember($person)) {
+            throw new Exception(
+                message: "Il cittadino è gia un membro della famiglia.",
+                code: 404,
+            );
         }
 
         $role = $request->enum('role', Role::class);

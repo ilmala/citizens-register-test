@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Role;
+use App\Exceptions\InvalidFamilyMemberException;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
 use App\Models\Person;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
@@ -37,16 +39,18 @@ class LeaveController extends Controller
 
         // Check if person is responsible for the family from
         if($family->isLedBy($person)) {
-            throw ValidationException::withMessages([
-                'family_id' => ['Family responsible cannot leave the family.'],
-            ]);
+            throw new Exception(
+                message: "Il responsabile non puo lasciare una famiglia.",
+                code: 404,
+            );
         }
 
         // Check if person is member of the family from
         if( ! $family->hasMember($person)) {
-            throw ValidationException::withMessages([
-                'family_id' => ['Person is not a family member.'],
-            ]);
+            throw new InvalidFamilyMemberException(
+                message: "Il cittadino non è membro della famiglia indicata.",
+                code: 404,
+            );
         }
 
         $member = $family->members()->find($person->id);
@@ -54,9 +58,10 @@ class LeaveController extends Controller
         $familyMemberRole = Role::tryFrom($member->pivot->role);
         // Check if member is a child and is the only member of family
         if(Role::Child === $familyMemberRole && 1 === $family->members()->count() && 1 === $person->families()->count()) {
-            throw ValidationException::withMessages([
-                'family_id' => ['Person is a child and is the only member in the family.'],
-            ]);
+            throw new Exception(
+                message: "Il cittadino filgio è il solo membro della famiglia.",
+                code: 404,
+            );
         }
 
         $family->members()->detach($person);

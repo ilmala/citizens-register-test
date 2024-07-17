@@ -24,6 +24,8 @@ test("Un cittadino puo essere associato ad un'altra famiglia senza lasciare la c
 });
 
 test("Un cittadino puo essere associato ad una famiglia a cui gia appartiene", function (): void {
+    $this->withoutExceptionHandling();
+
     $person = Person::factory()->create();
     $family = Family::factory()->create();
     $family->members()->attach($person, ['role' => Role::Parent]);
@@ -33,6 +35,5 @@ test("Un cittadino puo essere associato ad una famiglia a cui gia appartiene", f
         'role' => Role::Parent,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['person_id']);
-});
+    $response->assertStatus(404);
+})->throws(Exception::class, "Il cittadino è gia un membro della famiglia.");

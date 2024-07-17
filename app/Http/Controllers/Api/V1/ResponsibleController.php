@@ -5,15 +5,23 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Role;
+use App\Exceptions\InvalidFamilyMemberException;
+use App\Exceptions\InvalidMemberRoleException;
 use App\Http\Controllers\Controller;
 use App\Models\Family;
 use App\Models\Person;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\ValidationException;
 
 class ResponsibleController extends Controller
 {
+    /**
+     * @param Request $request
+     * @return Response
+     * @throws InvalidFamilyMemberException
+     * @throws InvalidMemberRoleException
+     */
     public function __invoke(Request $request): Response
     {
         $request->validate([
@@ -29,43 +37,44 @@ class ResponsibleController extends Controller
             id: $request->string('family_id')->toString(),
         );
 
-        // Check if person is part of the family
-        if( ! $familyMember) {
-            throw ValidationException::withMessages([
-                'family_id' => ['Person is not a family member.'],
-            ]);
+        if ( ! $familyMember) {
+            throw new InvalidFamilyMemberException(
+                message: "Il cittadino non è membro della famiglia indicata.",
+                code: 404,
+            );
         }
 
-        // check if person role is parent or tutor
         $familyMemberRole = Role::tryFrom($familyMember->pivot->role);
         if( ! in_array($familyMemberRole, [Role::Parent,Role::Tutor])) {
-            throw ValidationException::withMessages([
-                'family_id' => ['Person is not allowed to became a family responsible.'],
-            ]);
+            throw new InvalidMemberRoleException(
+                message: "Un cittadino con ruolo {$familyMemberRole->value} non puo diventare responsabile.",
+                code: 404,
+            );
         }
 
         $family = Family::query()->findOrFail(
             id: $request->string('family_id')->toString(),
         );
 
-        // Check if the family as more than 6 members
-        if( $familyMemberRole === Role::Parent && $person->families()->count()>3) {
-            throw ValidationException::withMessages([
-                'person_id' => ['A Parent con not be responsible for more than 3 families.'],
-            ]);
+        if(Role::Parent === $familyMemberRole && $person->families()->count() > 3) {
+            throw new Exception(
+                message: "Un cittadino parente non puo essere responsabile di più di 3 famiglie.",
+                code: 404,
+            );
         }
 
-        // Check if the family as more than 6 members
-        if( $familyMemberRole === Role::Parent && $family->members()->count() > 6) {
-            throw ValidationException::withMessages([
-                'family_id' => ['The family as more than 6 member.'],
-            ]);
+        if(Role::Parent === $familyMemberRole && $family->members()->count() > 6) {
+            throw new Exception(
+                message: "Un cittadino parente non puo essere responsabile di una famiglia con + di 6 membri.",
+                code: 404,
+            );
         }
 
-        if( $familyMember && $family->isLedBy($person)) {
-            throw ValidationException::withMessages([
-                'person_id' => ['Person is already a family responsible.'],
-            ]);
+        if($familyMember && $family->isLedBy($person)) {
+            throw new Exception(
+                message: "Questo cittadino è gia responsabile di questa famiglia.",
+                code: 404,
+            );
         }
 
         $family->responsible()->associate($person);
