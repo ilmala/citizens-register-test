@@ -22,11 +22,6 @@
                     <p class="mt-8 px-4 py-1 bg-neutral-800 text-neutral-500 text-sm rounded-xl">
                         PHP Version: <span class="text-neutral-200">{{$php_version}}</span> - Laravel: <span class="text-neutral-200">{{$laravel_version}}</span>
                     </p>
-                    <p>
-                        <a href="/api/documentation">
-                            OAPI Documentation
-                        </a>
-                    </p>
                 </div>
                 <div>
                     <div class="flex flex-col gap-4">

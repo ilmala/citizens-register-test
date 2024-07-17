@@ -101,3 +101,102 @@ test('Un cittadino responsabile di una famiglia non puo essere promosso a respon
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['person_id']);
 });
+
+test("Il genitore può essere responsabile di famiglie con massimo 6 membri", function (): void {
+    $persons = Person::factory()->count(6)->create();
+    $family = Family::factory()->create();
+    $family->members()->attach([
+        $persons[0]->id => ['role' => Role::Parent],
+        $persons[1]->id => ['role' => Role::Parent],
+        $persons[2]->id => ['role' => Role::Child],
+        $persons[3]->id => ['role' => Role::Child],
+        $persons[4]->id => ['role' => Role::Child],
+        $persons[5]->id => ['role' => Role::Child],
+    ]);
+
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $persons[0]->id,
+        'family_id' => $family->id,
+    ]);
+
+    $response->assertStatus(204);
+
+    $family = $family->fresh();
+    expect($family->responsible->id)->toEqual($persons[0]->id);
+});
+
+test("Il genitore non può essere responsabile di famiglie con più 6 membri", function (): void {
+    $persons = Person::factory()->count(7)->create();
+    $family = Family::factory()->create();
+    $family->members()->attach([
+        $persons[0]->id => ['role' => Role::Parent],
+        $persons[1]->id => ['role' => Role::Parent],
+        $persons[2]->id => ['role' => Role::Child],
+        $persons[3]->id => ['role' => Role::Child],
+        $persons[4]->id => ['role' => Role::Child],
+        $persons[5]->id => ['role' => Role::Child],
+        $persons[6]->id => ['role' => Role::Child],
+    ]);
+
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $persons[0]->id,
+        'family_id' => $family->id,
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['family_id']);
+});
+
+test("Il genitore può essere responsabile per non più di 3 famiglie", function (): void {
+    $parentPerson = Person::factory()->create();
+    $families = Family::factory()->count(3)->create();
+    foreach ($families as $family) {
+        $otherPersons = Person::factory()->count(2)->create();
+        $family->members()->attach([
+            $parentPerson->id => ['role' => Role::Parent],
+            $otherPersons[0]->id => ['role' => Role::Parent],
+            $otherPersons[1]->id => ['role' => Role::Child],
+        ]);
+
+        $family->responsible()->associate($parentPerson);
+        $family->save();
+    }
+    $newFamily = Family::factory()->create();
+    $newFamilyPersons = Person::factory()->count(2)->create();
+    $newFamily->members()->attach([
+        $parentPerson->id => ['role' => Role::Parent],
+        $newFamilyPersons[0]->id => ['role' => Role::Parent],
+        $newFamilyPersons[1]->id => ['role' => Role::Child],
+    ]);
+
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $parentPerson->id,
+        'family_id' => $newFamily->id,
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['person_id']);
+});
+
+test("Il tutore può essere responsabile di famiglie con più 6 membri", function (): void {
+    $persons = Person::factory()->count(7)->create();
+    $family = Family::factory()->create();
+    $family->members()->attach([
+        $persons[0]->id => ['role' => Role::Tutor],
+        $persons[1]->id => ['role' => Role::Tutor],
+        $persons[2]->id => ['role' => Role::Child],
+        $persons[3]->id => ['role' => Role::Child],
+        $persons[4]->id => ['role' => Role::Child],
+        $persons[5]->id => ['role' => Role::Child],
+        $persons[6]->id => ['role' => Role::Child],
+    ]);
+
+    $response = $this->postJson("/api/v1/responsible", [
+        'person_id' => $persons[0]->id,
+        'family_id' => $family->id,
+    ]);
+
+    $response->assertStatus(204);
+    $family = $family->fresh();
+    expect($family->responsible->id)->toEqual($persons[0]->id);
+});

@@ -38,7 +38,7 @@ class ResponsibleController extends Controller
 
         // check if person role is parent or tutor
         $familyMemberRole = Role::tryFrom($familyMember->pivot->role);
-        if( ! in_array($familyMemberRole, [Role::Parent,Role::Guardian])) {
+        if( ! in_array($familyMemberRole, [Role::Parent,Role::Tutor])) {
             throw ValidationException::withMessages([
                 'family_id' => ['Person is not allowed to became a family responsible.'],
             ]);
@@ -47,6 +47,20 @@ class ResponsibleController extends Controller
         $family = Family::query()->findOrFail(
             id: $request->string('family_id')->toString(),
         );
+
+        // Check if the family as more than 6 members
+        if( $familyMemberRole === Role::Parent && $person->families()->count()>3) {
+            throw ValidationException::withMessages([
+                'person_id' => ['A Parent con not be responsible for more than 3 families.'],
+            ]);
+        }
+
+        // Check if the family as more than 6 members
+        if( $familyMemberRole === Role::Parent && $family->members()->count() > 6) {
+            throw ValidationException::withMessages([
+                'family_id' => ['The family as more than 6 member.'],
+            ]);
+        }
 
         if( $familyMember && $family->isLedBy($person)) {
             throw ValidationException::withMessages([
